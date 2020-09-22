@@ -16,11 +16,7 @@
  */
 package com.github.cameltooling.idea.documentation;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
 import com.github.cameltooling.idea.model.ComponentModel;
-import com.github.cameltooling.idea.model.EndpointOptionModel;
 import com.github.cameltooling.idea.model.ModelHelper;
 import com.github.cameltooling.idea.service.CamelCatalogService;
 import com.github.cameltooling.idea.service.CamelService;
@@ -54,14 +50,20 @@ import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.psi.xml.XmlToken;
 import com.intellij.psi.xml.XmlTokenType;
 import org.apache.camel.catalog.CamelCatalog;
-import org.apache.camel.catalog.JSonSchemaHelper;
+import org.apache.camel.tooling.model.ComponentModel.EndpointOptionModel;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
 import static com.github.cameltooling.idea.util.StringUtils.asComponentName;
 import static com.github.cameltooling.idea.util.StringUtils.asLanguageName;
 import static com.github.cameltooling.idea.util.StringUtils.wrapSeparator;
 import static com.github.cameltooling.idea.util.StringUtils.wrapWords;
-
 
 /**
  * Camel documentation provider to hook into IDEA to show Camel endpoint documentation in popups and various other places.
@@ -197,31 +199,35 @@ public class CamelDocumentationProvider extends DocumentationProviderEx implemen
 
             // if the option ends with a dot then its a prefixed/multi value option which we need special logic
             // find its real option name and documentation which we want to show in the quick doc window
-            if (option.endsWith(".")) {
-                CamelCatalog camelCatalog = ServiceManager.getService(psiManager.getProject(), CamelCatalogService.class).get();
-                String json = camelCatalog.componentJSonSchema(componentName);
-                if (json == null) {
-                    return null;
-                }
-                ComponentModel component = ModelHelper.generateComponentModel(json, true);
-
-                final String prefixOption = option;
-
-                // find the line with this prefix as prefix and multivalue
-                EndpointOptionModel endpointOption = component.getEndpointOptions().stream().filter(
-                    o -> "true".equals(o.getMultiValue()) && prefixOption.equals(o.getPrefix()))
-                    .findFirst().orElse(null);
-
-                // use the real option name instead of the prefix
-                if (endpointOption != null) {
-                    option = endpointOption.getName();
-                }
-            }
+            option = getMultiValueOptions(element.getProject(), componentName, option);
 
             return new DocumentationElement(psiManager, element.getLanguage(), element, option, componentName);
         }
 
         return null;
+    }
+
+    private String getMultiValueOptions(Project project, String componentName, String option) {
+        if (option.endsWith(".")) {
+            CamelCatalog camelCatalog = ServiceManager.getService(project, CamelCatalogService.class).get();
+
+            String json = camelCatalog.componentJSonSchema(componentName);
+            if (json == null) {
+                return null;
+            }
+            ComponentModel component = ModelHelper.generateComponentModel(json, true);
+
+            final String prefixOption = option;
+
+            // find the line with this prefix as prefix and multivalue
+            // use the real option name instead of the prefix
+            return component.getEndpointOptions().stream().filter(
+                o -> o.isMultiValue() && prefixOption.equals(o.getPrefix()))
+                .findFirst()
+                .map(endpointOptionModel -> endpointOptionModel.getName())
+                .orElse(option);
+        }
+        return option;
     }
 
     @Nullable
@@ -241,10 +247,10 @@ public class CamelDocumentationProvider extends DocumentationProviderEx implemen
             if (node != null && node instanceof XmlToken) {
                 //there is an &amp; in the route that splits the route in separated PsiElements
                 if (node.getElementType() == XmlTokenType.XML_ATTRIBUTE_VALUE_TOKEN
-                    //the caret is at the end of the route next to the " character
-                    || node.getElementType() == XmlTokenType.XML_ATTRIBUTE_VALUE_END_DELIMITER
-                    //the caret is placed on an &amp; element
-                    || contextElement.getText().equals("&amp;")) {
+                        //the caret is at the end of the route next to the " character
+                        || node.getElementType() == XmlTokenType.XML_ATTRIBUTE_VALUE_END_DELIMITER
+                        //the caret is placed on an &amp; element
+                        || contextElement.getText().equals("&amp;")) {
                     if (hasDocumentationForCamelComponent(contextElement.getParent())) {
                         return contextElement.getParent();
                     }
@@ -367,7 +373,7 @@ public class CamelDocumentationProvider extends DocumentationProviderEx implemen
         if (option.endsWith(".")) {
             // find the line with this prefix as prefix and multivalue
             endpointOption = component.getEndpointOptions().stream().filter(
-                o -> "true".equals(o.getMultiValue()) && option.equals(o.getPrefix()))
+                o -> o.isMultiValue() && option.equals(o.getPrefix()))
                 .findFirst().orElse(null);
         } else {
             endpointOption = component.getEndpointOption(option);
@@ -381,12 +387,17 @@ public class CamelDocumentationProvider extends DocumentationProviderEx implemen
         builder.append("<strong>Group: </strong>").append(endpointOption.getGroup()).append("<br/>");
         builder.append("<strong>Type: </strong>").append("<tt>").append(endpointOption.getJavaType()).append("</tt>").append("<br/>");
         boolean required = false;
-        if (!endpointOption.getRequired().equals("")) {
+        if (endpointOption.isRequired()) {
             required = true;
         }
         builder.append("<strong>Required: </strong>").append(required).append("<br/>");
         if (!endpointOption.getEnums().equals("")) {
-            builder.append("<strong>Possible values: </strong>").append(endpointOption.getEnums().replace(",", ", ")).append("<br/>");
+            String endPointValues = endpointOption.getEnums()
+                    .stream()
+                    .collect(Collectors.joining(", "));
+            builder.append("<strong>Possible values: </strong>")
+                    .append(endPointValues)
+                    .append("<br/>");
         }
         if (!endpointOption.getDefaultValue().equals("")) {
             builder.append("<strong>Default value: </strong>").append(endpointOption.getDefaultValue()).append("<br/>");
@@ -403,7 +414,7 @@ public class CamelDocumentationProvider extends DocumentationProviderEx implemen
             return null;
         }
 
-        ComponentModel component = ModelHelper.generateComponentModel(json, false);
+        ComponentModel component = ModelHelper.generateComponentModel(json, true);
 
         // camel catalog expects &amp; as & when it parses so replace all &amp; as &
         String camelQuery = val;
@@ -423,63 +434,20 @@ public class CamelDocumentationProvider extends DocumentationProviderEx implemen
 
         StringBuilder options = new StringBuilder();
         if (existing != null && !existing.isEmpty()) {
-            List<Map<String, String>> lines = JSonSchemaHelper.parseJsonSchema("properties", json, true);
-
-            for (Map.Entry<String, String> entry : existing.entrySet()) {
-                String name = entry.getKey();
-                String value = entry.getValue();
-
-                Map<String, String> row;
-
-                // is it a multi valued option then we need to find the option name to use for lookup
-                String option = JSonSchemaHelper.getPropertyNameFromNameWithPrefix(lines, name);
-                if (option != null && JSonSchemaHelper.isPropertyMultiValue(lines, option)) {
-                    row = JSonSchemaHelper.getRow(lines, option);
-                } else {
-                    row = JSonSchemaHelper.getRow(lines, name);
-                }
-
-                if (row != null) {
-                    String kind = row.get("kind");
-
-                    String line;
-                    if ("path".equals(kind)) {
-                        line = value + "<br/>";
-                    } else {
-                        line = name + "=" + value + "<br/>";
-                    }
-                    options.append("<br/>");
-                    options.append("<b>").append(line).append("</b>");
-
-                    String summary = row.get("description");
-                    // the text looks a bit weird when using single /
-                    summary = summary.replace('/', ' ');
-                    options.append(wrapText(summary, wrapLength)).append("<br/>");
-                }
-            }
+            options.append(generateEndpointOptionsDocumentation(existing, wrapLength, component));
         }
+        options.append(generateLenientPropertiesDocumentation(wrapLength, camelCatalog, camelQuery));
 
-        // append any lenient options as well
-        Map<String, String> extra = null;
-        try {
-            extra = camelCatalog.endpointLenientProperties(camelQuery);
-        } catch (Throwable e) {
-            LOG.warn("Error parsing Camel endpoint properties with url: " + camelQuery, e);
+        StringBuilder sb = generateComponentHeaderDocumentation(val, wrapLength, component);
+
+        if (options.length() > 0) {
+            sb.append(options.toString());
         }
-        if (extra != null && !extra.isEmpty()) {
-            for (Map.Entry<String, String> entry : extra.entrySet()) {
-                String name = entry.getKey();
-                String value = entry.getValue();
+        return sb.toString();
+    }
 
-                String line = name + "=" + value + "<br/>";
-                options.append("<br/>");
-                options.append("<b>").append(line).append("</b>");
-
-                String summary = "This option is a custom option that is not part of the Camel component";
-                options.append(wrapText(summary, wrapLength)).append("<br/>");
-            }
-        }
-
+    @NotNull
+    private StringBuilder generateComponentHeaderDocumentation(String val, int wrapLength, ComponentModel component) {
         StringBuilder sb = new StringBuilder();
         sb.append("<b>").append(component.getTitle()).append(" Component</b><br/>");
         sb.append(wrapText(component.getDescription(), wrapLength)).append("<br/><br/>");
@@ -497,11 +465,66 @@ public class CamelDocumentationProvider extends DocumentationProviderEx implemen
         // indent the endpoint url with 5 spaces and wrap it by url separator
         String wrapped = wrapSeparator(val, "&", "<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;", 100);
         sb.append("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>").append(wrapped).append("</b><br/>");
+        return sb;
+    }
 
-        if (options.length() > 0) {
-            sb.append(options.toString());
+    private StringBuilder generateLenientPropertiesDocumentation(int wrapLength, CamelCatalog camelCatalog, String camelQuery) {
+        StringBuilder options = new StringBuilder();
+        // append any lenient options as well
+        Map<String, String> extra = null;
+        try {
+            extra = camelCatalog.endpointLenientProperties(camelQuery);
+        } catch (Throwable e) {
+            LOG.warn("Error parsing Camel endpoint properties with url: " + camelQuery, e);
         }
-        return sb.toString();
+        if (!extra.isEmpty()) {
+            for (Map.Entry<String, String> entry : extra.entrySet()) {
+                String name = entry.getKey();
+                String value = entry.getValue();
+
+                String line = name + "=" + value + "<br/>";
+                options.append("<br/>");
+                options.append("<b>").append(line).append("</b>");
+
+                String summary = "This option is a custom option that is not part of the Camel component";
+                options.append(wrapText(summary, wrapLength)).append("<br/>");
+            }
+        }
+        return options;
+    }
+
+    private StringBuilder generateEndpointOptionsDocumentation(Map<String, String> existing, int wrapLength, ComponentModel component) {
+        StringBuilder options = new StringBuilder();
+        existing.forEach((name, value) -> {
+            Optional<EndpointOptionModel> row = component.getEndpointOptions().stream()
+                    .filter(endpointOptionModel -> endpointOptionModel.getName().equals(name))
+                    .findFirst();
+
+            if (row.isPresent() && row.get().isMultiValue()) {
+                String prefix = row.get().getPrefix();
+                row = component.getEndpointOptions().stream()
+                        .filter(endpointOptionModel -> endpointOptionModel.getPrefix().equals(prefix))
+                        .findFirst();
+            }
+            row.ifPresent(endpointOptionModel -> {
+                String kind = endpointOptionModel.getKind();
+
+                String line;
+                if ("path".equals(kind)) {
+                    line = value + "<br/>";
+                } else {
+                    line = name + "=" + value + "<br/>";
+                }
+                options.append("<br/>");
+                options.append("<b>").append(line).append("</b>");
+
+                String summary = endpointOptionModel.getDescription();
+                // the text looks a bit weird when using single /
+                summary = summary.replace('/', ' ');
+                options.append(wrapText(summary, wrapLength)).append("<br/>");
+            });
+        });
+        return options;
     }
 
     private boolean isPsiMethodCamelLanguage(PsiMethod method) {

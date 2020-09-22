@@ -16,30 +16,26 @@
  */
 package com.github.cameltooling.idea.util;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import com.github.cameltooling.idea.extension.CamelIdeaUtilsExtension;
-import com.github.cameltooling.idea.reference.blueprint.BeanReference;
-import com.github.cameltooling.idea.reference.blueprint.model.ReferenceableBeanId;
-import com.github.cameltooling.idea.reference.blueprint.model.ReferencedClass;
 import com.github.cameltooling.idea.reference.endpoint.CamelEndpoint;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.module.Module;
-import com.intellij.psi.JavaPsiFacade;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiClassType;
 import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiElementFactory;
 import com.intellij.psi.PsiMethod;
-import com.intellij.psi.PsiReference;
-import com.intellij.psi.PsiType;
-import com.intellij.psi.xml.XmlTag;
+import org.apache.camel.util.json.DeserializationException;
+import org.apache.camel.util.json.JsonObject;
+import org.apache.camel.util.json.Jsoner;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /**
  * Utility methods to work with Camel related {@link com.intellij.psi.PsiElement} elements.
@@ -248,6 +244,20 @@ public final class CamelIdeaUtils implements Disposable {
             .map(e -> e.findEndpointDeclarations(module, uriCondition))
             .flatMap(List::stream)
             .collect(Collectors.toList());
+    }
+
+    /**
+     * @param json - json component model
+     * @return a list of maps of properties and it values
+     */
+    public List<Map<String, String>> getComponentProperties(String json) {
+        JsonObject obj;
+        try {
+            obj = (JsonObject) Jsoner.deserialize(json);
+            return obj.getMap("properties");
+        } catch (DeserializationException e) {
+            throw new IllegalStateException("Could not parse JSON component model");
+        }
     }
 
     private IdeaUtils getIdeaUtils() {

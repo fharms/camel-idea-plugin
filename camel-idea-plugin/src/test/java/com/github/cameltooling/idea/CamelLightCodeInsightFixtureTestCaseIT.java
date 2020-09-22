@@ -25,20 +25,19 @@ import com.github.cameltooling.idea.util.JavaMethodUtils;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.module.Module;
-import com.intellij.openapi.projectRoots.JavaSdk;
 import com.intellij.openapi.projectRoots.Sdk;
 import com.intellij.openapi.roots.ContentEntry;
 import com.intellij.openapi.roots.LanguageLevelModuleExtension;
 import com.intellij.openapi.roots.ModifiableRootModel;
 import com.intellij.pom.java.LanguageLevel;
 import com.intellij.psi.PsiElement;
+import com.intellij.testFramework.IdeaTestUtil;
 import com.intellij.testFramework.LightProjectDescriptor;
 import com.intellij.testFramework.PsiTestUtil;
 import com.intellij.testFramework.fixtures.DefaultLightProjectDescriptor;
 import com.intellij.testFramework.fixtures.LightJavaCodeInsightFixtureTestCase;
 import org.jboss.shrinkwrap.resolver.api.maven.Maven;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.jps.model.java.JpsJavaSdkType;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -52,14 +51,15 @@ import java.util.Properties;
  * you should extend this class to make sure it is setup as expected and clean up on tearDown
  */
 public abstract class CamelLightCodeInsightFixtureTestCaseIT extends LightJavaCodeInsightFixtureTestCase {
-    private static final String BUILD_MOCK_JDK_DIRECTORY = "build/mockJDK-";
-
-    private static File[] mavenArtifacts;
+    private static File camelCoreArtifact;
+    private static File camelCoreEngineArtifact;
+    private static File camelCoreLangArtifact;
     private boolean ignoreCamelCoreLib;
 
     protected static String CAMEL_VERSION;
     protected static String CAMEL_CORE_MAVEN_ARTIFACT = "org.apache.camel:camel-core:%s";
-
+    protected static String CAMEL_CORE_ENGINE_MAVEN_ARTIFACT = "org.apache.camel:camel-core-engine:%s";
+    protected static String CAMEL_CORE_LANG_MAVEN_ARTIFACT = "org.apache.camel:camel-core-languages:%s";
 
     static {
         try {
@@ -69,8 +69,12 @@ public abstract class CamelLightCodeInsightFixtureTestCaseIT extends LightJavaCo
             gradleProperties.load(new FileInputStream(projectRoot +"/gradle.properties"));
             CAMEL_VERSION = gradleProperties.getProperty("camelVersion");
             CAMEL_CORE_MAVEN_ARTIFACT = String.format(CAMEL_CORE_MAVEN_ARTIFACT, CAMEL_VERSION);
+            CAMEL_CORE_LANG_MAVEN_ARTIFACT = String.format(CAMEL_CORE_LANG_MAVEN_ARTIFACT, CAMEL_VERSION);
+            CAMEL_CORE_ENGINE_MAVEN_ARTIFACT = String.format(CAMEL_CORE_ENGINE_MAVEN_ARTIFACT, CAMEL_VERSION);
 
-            mavenArtifacts = getMavenArtifacts(CAMEL_CORE_MAVEN_ARTIFACT);
+            camelCoreArtifact = getMavenArtifact(CAMEL_CORE_MAVEN_ARTIFACT);
+            camelCoreEngineArtifact = getMavenArtifact(CAMEL_CORE_ENGINE_MAVEN_ARTIFACT);
+            camelCoreLangArtifact = getMavenArtifact(CAMEL_CORE_LANG_MAVEN_ARTIFACT);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -80,7 +84,9 @@ public abstract class CamelLightCodeInsightFixtureTestCaseIT extends LightJavaCo
     protected void setUp() throws Exception {
         super.setUp();
         if (!ignoreCamelCoreLib) {
-            PsiTestUtil.addLibrary(myFixture.getProjectDisposable(), myFixture.getModule(), "Maven: " + CAMEL_CORE_MAVEN_ARTIFACT, mavenArtifacts[0].getParent(), mavenArtifacts[0].getName());
+            PsiTestUtil.addLibrary(myFixture.getProjectDisposable(), myFixture.getModule(), "Maven: " + CAMEL_CORE_MAVEN_ARTIFACT, camelCoreArtifact.getParent(), camelCoreArtifact.getName());
+            PsiTestUtil.addLibrary(myFixture.getProjectDisposable(), myFixture.getModule(), "Maven: " + CAMEL_CORE_LANG_MAVEN_ARTIFACT, camelCoreLangArtifact.getParent(), camelCoreLangArtifact.getName());
+            PsiTestUtil.addLibrary(myFixture.getProjectDisposable(), myFixture.getModule(), "Maven: " + CAMEL_CORE_ENGINE_MAVEN_ARTIFACT, camelCoreEngineArtifact.getParent(), camelCoreEngineArtifact.getName());
         }
         ApplicationManager
             .getApplication()
@@ -106,14 +112,14 @@ public abstract class CamelLightCodeInsightFixtureTestCaseIT extends LightJavaCo
      * <p>
      *   The method take a String arrays off "G:A:P:C:?" "org.apache.camel:camel-core:2.22.0"
      * </p>
-     * @param mavneAritfiact - Array of maven artifact to resolve
-     * @return Array of artifact files
+     * @param mavneAritfiact - Amaven artifact to resolve
+     * @return Single artifact files
      * @throws IOException
      */
-    protected static File[] getMavenArtifacts(String... mavneAritfiact) throws IOException {
-        File[] libs = Maven.resolver()
+    protected static File getMavenArtifact(String mavneAritfiact) throws IOException {
+        File libs = Maven.resolver()
             .resolve(mavneAritfiact)
-            .withoutTransitivity().asFile();
+            .withoutTransitivity().asSingleFile();
 
         return libs;
     }
@@ -155,8 +161,7 @@ public abstract class CamelLightCodeInsightFixtureTestCaseIT extends LightJavaCo
         return new DefaultLightProjectDescriptor() {
             @Override
             public Sdk getSdk() {
-                String compilerOption = JpsJavaSdkType.complianceOption(languageLevel.toJavaVersion());
-                return JavaSdk.getInstance().createJdk( "java " + compilerOption, BUILD_MOCK_JDK_DIRECTORY + compilerOption, false );
+                return IdeaTestUtil.getMockJdk18();
             }
 
             @Override

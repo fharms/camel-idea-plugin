@@ -119,7 +119,9 @@ public class XmlEndpointSmartCompletionTestIT extends CamelLightCodeInsightFixtu
         myFixture.complete(CompletionType.BASIC, 1);
         List<String> strings = myFixture.getLookupElementStrings();
         assertThat(strings, not(contains("timer:trigger?repeatCount=10")));
-        assertThat(strings, contains("&amp;bridgeErrorHandler",
+        assertThat(strings, containsInAnyOrder("&amp;bridgeErrorHandler",
+            "&amp;basicPropertyBinding",
+            "&amp;includeMetadata",
             "&amp;daemon",
             "&amp;delay",
             "&amp;exceptionHandler",
@@ -130,7 +132,7 @@ public class XmlEndpointSmartCompletionTestIT extends CamelLightCodeInsightFixtu
             "&amp;synchronous",
             "&amp;time",
             "&amp;timer"));
-        assertTrue("There is less options", strings.size() < 13);
+        assertTrue("There is less options", strings.size() == 13);
     }
 
     private String getXmlInTheMiddleOfResolvedOptionsData() {
@@ -185,7 +187,7 @@ public class XmlEndpointSmartCompletionTestIT extends CamelLightCodeInsightFixtu
         List<String> strings = myFixture.getLookupElementStrings();
         assertTrue("There is less options", strings.size() > 10);
         myFixture.type('\n');
-        String result = getXmlAfterValueWithOutAmpTestData().replace("<caret>", "&amp;bridgeErrorHandler=");
+        String result = getXmlAfterValueWithOutAmpTestData().replace("<caret>", "&amp;basicPropertyBinding=");
         myFixture.checkResult(result);
     }
 
@@ -204,14 +206,14 @@ public class XmlEndpointSmartCompletionTestIT extends CamelLightCodeInsightFixtu
         myFixture.configureByText("CamelRoute.xml", getXmlMultilineTestData());
         myFixture.complete(CompletionType.BASIC, 1);
         List<String> strings = myFixture.getLookupElementStrings();
-        assertEquals("There is many options", 8, strings.size());
+        assertEquals("There is many options", 10, strings.size());
         assertThat(strings, not(containsInAnyOrder(
             "timer:trigger?repeatCount=10&",
             "&fixedRate=false",
             "&daemon=false",
             "&period=10")));
         myFixture.type('\n');
-        String xmlInsertAfterQuestionMarkTestData = getXmlMultilineTestData().replace("<caret>", "&amp;bridgeErrorHandler=");
+        String xmlInsertAfterQuestionMarkTestData = getXmlMultilineTestData().replace("<caret>", "&amp;basicPropertyBinding=");
         myFixture.checkResult(xmlInsertAfterQuestionMarkTestData);
     }
 
@@ -230,14 +232,14 @@ public class XmlEndpointSmartCompletionTestIT extends CamelLightCodeInsightFixtu
         myFixture.configureByText("CamelRoute.xml", getXmlMultilineTest2Data());
         myFixture.complete(CompletionType.BASIC, 1);
         List<String> strings = myFixture.getLookupElementStrings();
-        assertEquals("There is many options", 8, strings.size());
+        assertEquals("There is many options", 10, strings.size());
         assertThat(strings, not(containsInAnyOrder(
             "timer:trigger?repeatCount=10",
             "&amp;fixedRate=false",
             "&amp;daemon=false",
             "&amp;period=10")));
         myFixture.type('\n');
-        String xmlInsertAfterQuestionMarkTestData = getXmlMultilineTest2Data().replace("<caret>", "&amp;bridgeErrorHandler=");
+        String xmlInsertAfterQuestionMarkTestData = getXmlMultilineTest2Data().replace("<caret>", "&amp;basicPropertyBinding=");
         myFixture.checkResult(xmlInsertAfterQuestionMarkTestData);
     }
 
@@ -256,14 +258,14 @@ public class XmlEndpointSmartCompletionTestIT extends CamelLightCodeInsightFixtu
         myFixture.configureByText("CamelRoute.xml", getXmlMultilineTest3Data());
         myFixture.complete(CompletionType.BASIC, 1);
         List<String> strings = myFixture.getLookupElementStrings();
-        assertEquals("There is many options", 8, strings.size());
+        assertEquals("There is many options", 10, strings.size());
         assertThat(strings, not(containsInAnyOrder(
             "timer:trigger?repeatCount=10&amp;",
             "&amp;fixedRate=false",
             "&amp;daemon=false",
             "&amp;period=10")));
         myFixture.type('\n');
-        String xmlInsertAfterQuestionMarkTestData = getXmlMultilineTest3Data().replace("<caret>", "&amp;bridgeErrorHandler=");
+        String xmlInsertAfterQuestionMarkTestData = getXmlMultilineTest3Data().replace("<caret>", "&amp;basicPropertyBinding=");
         myFixture.checkResult(xmlInsertAfterQuestionMarkTestData);
     }
 

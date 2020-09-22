@@ -96,18 +96,20 @@ public class JavaEndpointSmartCompletionTestIT extends CamelLightCodeInsightFixt
         myFixture.complete(CompletionType.BASIC, 1);
         List<String> strings = myFixture.getLookupElementStrings();
         assertThat(strings, Matchers.not(Matchers.contains("timer:trigger?repeatCount=10")));
-        assertThat(strings, Matchers.contains("timer:trigger?repeatCount=10&bridgeErrorHandler",
+        assertThat(strings, Matchers.containsInAnyOrder("timer:trigger?repeatCount=10&bridgeErrorHandler",
             "timer:trigger?repeatCount=10&daemon",
             "timer:trigger?repeatCount=10&delay",
             "timer:trigger?repeatCount=10&exceptionHandler",
             "timer:trigger?repeatCount=10&exchangePattern",
+            "timer:trigger?repeatCount=10&includeMetadata",
+            "timer:trigger?repeatCount=10&basicPropertyBinding",
             "timer:trigger?repeatCount=10&fixedRate",
             "timer:trigger?repeatCount=10&pattern",
             "timer:trigger?repeatCount=10&period",
             "timer:trigger?repeatCount=10&synchronous",
             "timer:trigger?repeatCount=10&time",
             "timer:trigger?repeatCount=10&timer"));
-        assertTrue("There is less options", strings.size() < 13);
+        assertTrue("There is less options", strings.size() == 13);
     }
 
 
@@ -182,14 +184,14 @@ public class JavaEndpointSmartCompletionTestIT extends CamelLightCodeInsightFixt
         myFixture.configureByText("CamelRoute.java", getJavaMultilineTestData());
         myFixture.complete(CompletionType.BASIC, 1);
         List<String> strings = myFixture.getLookupElementStrings();
-        assertEquals("There is many options", 8, strings.size());
+        assertEquals("There is many options", 10, strings.size());
         assertThat(strings, Matchers.not(Matchers.containsInAnyOrder(
             "timer:trigger?repeatCount=10&",
             "&fixedRate=false",
             "&daemon=false",
             "&period=10")));
         myFixture.type('\n');
-        String javaInsertAfterQuestionMarkTestData = getJavaMultilineTestData().replace("<caret>", "&bridgeErrorHandler=");
+        String javaInsertAfterQuestionMarkTestData = getJavaMultilineTestData().replace("<caret>", "&basicPropertyBinding=");
         myFixture.checkResult(javaInsertAfterQuestionMarkTestData);
     }
 
@@ -208,14 +210,14 @@ public class JavaEndpointSmartCompletionTestIT extends CamelLightCodeInsightFixt
         myFixture.configureByText("CamelRoute.java", getJavaMultilineTest2Data());
         myFixture.complete(CompletionType.BASIC, 1);
         List<String> strings = myFixture.getLookupElementStrings();
-        assertEquals("There is many options", 8, strings.size());
+        assertEquals("There is many options", 10, strings.size());
         assertThat(strings, Matchers.not(Matchers.containsInAnyOrder(
             "timer:trigger?repeatCount=10",
             "&fixedRate=false",
             "&daemon=false",
             "&period=10")));
         myFixture.type('\n');
-        String javaInsertAfterQuestionMarkTestData = getJavaMultilineTest2Data().replace("<caret>", "&bridgeErrorHandler=");
+        String javaInsertAfterQuestionMarkTestData = getJavaMultilineTest2Data().replace("<caret>", "&basicPropertyBinding=");
         myFixture.checkResult(javaInsertAfterQuestionMarkTestData);
     }
 
@@ -234,14 +236,14 @@ public class JavaEndpointSmartCompletionTestIT extends CamelLightCodeInsightFixt
         myFixture.configureByText("CamelRoute.java", getJavaMultilineTest3Data());
         myFixture.complete(CompletionType.BASIC, 1);
         List<String> strings = myFixture.getLookupElementStrings();
-        assertEquals("There is many options", 8, strings.size());
+        assertEquals("There is many options", 10, strings.size());
         assertThat(strings, Matchers.not(Matchers.containsInAnyOrder(
             "timer:trigger?repeatCount=10",
             "&fixedRate=false",
             "&daemon=false",
             "&period=10")));
         myFixture.type('\n');
-        String javaInsertAfterQuestionMarkTestData = getJavaMultilineTest3Data().replace("<caret>", "bridgeErrorHandler=");
+        String javaInsertAfterQuestionMarkTestData = getJavaMultilineTest3Data().replace("<caret>", "basicPropertyBinding=");
         myFixture.checkResult(javaInsertAfterQuestionMarkTestData);
     }
 
@@ -287,14 +289,14 @@ public class JavaEndpointSmartCompletionTestIT extends CamelLightCodeInsightFixt
         myFixture.configureByText("CamelRoute.java", getJavaMultilineTest4SearchData());
         myFixture.complete(CompletionType.BASIC, 1);
         List<String> strings = myFixture.getLookupElementStrings();
-        assertEquals("There is many options", 8, strings.size());
+        assertEquals("There is many options", 10, strings.size());
         assertThat(strings, Matchers.not(Matchers.containsInAnyOrder(
             "timer:trigger?repeatCount=10",
             "fixedRate=false",
             "daemon=false",
             "period=10")));
         myFixture.type('\n');
-        String javaMarkTestData = getJavaMultilineTest4SearchData().replace("<caret>", "&bridgeErrorHandler=");
+        String javaMarkTestData = getJavaMultilineTest4SearchData().replace("<caret>", "&basicPropertyBinding=");
         myFixture.checkResult(javaMarkTestData);
     }
 

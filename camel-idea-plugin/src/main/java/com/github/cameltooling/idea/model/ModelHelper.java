@@ -16,9 +16,17 @@
  */
 package com.github.cameltooling.idea.model;
 
+import org.apache.camel.tooling.model.ComponentModel.ComponentOptionModel;
+import org.apache.camel.tooling.model.ComponentModel.EndpointOptionModel;
+import org.apache.camel.util.json.DeserializationException;
+import org.apache.camel.util.json.JsonObject;
+import org.apache.camel.util.json.Jsoner;
+
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import org.apache.camel.catalog.JSonSchemaHelper;
+
+import static com.github.cameltooling.idea.util.StringUtils.getSafeDefaultValue;
 import static com.github.cameltooling.idea.util.StringUtils.getSafeValue;
 
 public final class ModelHelper {
@@ -28,63 +36,68 @@ public final class ModelHelper {
     }
 
     public static ComponentModel generateComponentModel(String json, boolean includeOptions) {
-        List<Map<String, String>> rows = JSonSchemaHelper.parseJsonSchema("component", json, false);
+        try {
+            JsonObject obj = (JsonObject) Jsoner.deserialize(json);
+            Map<String, Object> rows = obj.getMap("component");
+            ComponentModel component = new ComponentModel();
+            component.setScheme(getSafeValue("scheme", rows, ""));
+            component.setSyntax(getSafeValue("syntax", rows, ""));
+            component.setAlternativeSyntax(getSafeValue("alternativeSyntax", rows, ""));
+            component.setAlternativeSchemes(getSafeValue("alternativeSchemes", rows, ""));
+            component.setTitle(getSafeValue("title", rows, ""));
+            component.setDescription(getSafeValue("description", rows, ""));
+            component.setLabel(getSafeValue("label", rows, ""));
+            component.setDeprecated(getSafeValue("deprecated", rows, false));
+            component.setConsumerOnly(getSafeValue("consumerOnly", rows, ""));
+            component.setProducerOnly(getSafeValue("producerOnly", rows, ""));
+            component.setJavaType(getSafeValue("javaType", rows, ""));
+            component.setGroupId(getSafeValue("groupId", rows, ""));
+            component.setArtifactId(getSafeValue("artifactId", rows, ""));
+            component.setVersion(getSafeValue("version", rows, ""));
 
-        ComponentModel component = new ComponentModel();
-        component.setScheme(getSafeValue("scheme", rows));
-        component.setSyntax(getSafeValue("syntax", rows));
-        component.setAlternativeSyntax(getSafeValue("alternativeSyntax", rows));
-        component.setAlternativeSchemes(getSafeValue("alternativeSchemes", rows));
-        component.setTitle(getSafeValue("title", rows));
-        component.setDescription(getSafeValue("description", rows));
-        component.setLabel(getSafeValue("label", rows));
-        component.setDeprecated(getSafeValue("deprecated", rows));
-        component.setConsumerOnly(getSafeValue("consumerOnly", rows));
-        component.setProducerOnly(getSafeValue("producerOnly", rows));
-        component.setJavaType(getSafeValue("javaType", rows));
-        component.setGroupId(getSafeValue("groupId", rows));
-        component.setArtifactId(getSafeValue("artifactId", rows));
-        component.setVersion(getSafeValue("version", rows));
+            if (includeOptions) {
+                Map<String, Map<String, Object>> modelComponentProperties = obj.getMap("componentProperties");
+                for (Map.Entry<String, Map<String, Object>> modelComponentProperty : modelComponentProperties.entrySet()) {
+                    ComponentOptionModel option = new ComponentOptionModel();
+                    Map<String, Object>options = modelComponentProperty.getValue();
+                    option.setName(modelComponentProperty.getKey());
+                    option.setKind(getSafeValue("kind", options, ""));
+                    option.setGroup(getSafeValue("group", options, ""));
+                    option.setRequired(getSafeValue("required", options, false));
+                    option.setType(getSafeValue("type", options, ""));
+                    option.setJavaType(getSafeValue("javaType", options, ""));
+                    option.setEnums((List<String>)options.getOrDefault("enum", Collections.emptyList()));
+                    option.setDeprecated(getSafeValue("deprecated", options, false));
+                    option.setSecret(getSafeValue("secret", options, false));
+                    option.setDefaultValue(getSafeDefaultValue("defaultValue", options));
+                    option.setDescription(getSafeValue("description", options, ""));
+                    component.addComponentOption(option);
+                }
 
-        if (includeOptions) {
-            rows = JSonSchemaHelper.parseJsonSchema("componentProperties", json, true);
-            for (Map<String, String> row : rows) {
-                ComponentOptionModel option = new ComponentOptionModel();
-                option.setName(getSafeValue("name", row));
-                option.setKind(getSafeValue("kind", row));
-                option.setGroup(getSafeValue("group", row));
-                option.setRequired(getSafeValue("required", row));
-                option.setType(getSafeValue("type", row));
-                option.setJavaType(getSafeValue("javaType", row));
-                option.setEnums(getSafeValue("enum", row));
-                option.setDeprecated(getSafeValue("deprecated", row));
-                option.setSecret(getSafeValue("secret", row));
-                option.setDefaultValue(getSafeValue("defaultValue", row));
-                option.setDescription(getSafeValue("description", row));
-                component.addComponentOption(option);
+                Map<String, Map<String, Object>> modelProperties = obj.getMap("properties");
+                for (Map.Entry<String, Map<String, Object>> modelProperty : modelProperties.entrySet()) {
+                    EndpointOptionModel option = new EndpointOptionModel();
+                    Map<String, Object> options = modelProperty.getValue();
+                    option.setName(modelProperty.getKey());
+                    option.setKind(getSafeValue("kind", options, ""));
+                    option.setGroup(getSafeValue("group", options, ""));
+                    option.setLabel(getSafeValue("label", options, ""));
+                    option.setRequired(getSafeValue("required", options, false));
+                    option.setType(getSafeValue("type", options, ""));
+                    option.setJavaType(getSafeValue("javaType", options, ""));
+                    option.setEnums((List<String>)options.getOrDefault("enum", Collections.emptyList()));
+                    option.setPrefix(getSafeValue("prefix", options, ""));
+                    option.setMultiValue(getSafeValue("multiValue", options, false));
+                    option.setDeprecated(getSafeValue("deprecated", options, false));
+                    option.setSecret(getSafeValue("secret", options, false));
+                    option.setDefaultValue(getSafeDefaultValue("defaultValue", options));
+                    option.setDescription(getSafeValue("description", options, ""));
+                    component.addEndpointOption(option);
+                }
             }
-
-            rows = JSonSchemaHelper.parseJsonSchema("properties", json, true);
-            for (Map<String, String> row : rows) {
-                EndpointOptionModel option = new EndpointOptionModel();
-                option.setName(getSafeValue("name", row));
-                option.setKind(getSafeValue("kind", row));
-                option.setGroup(getSafeValue("group", row));
-                option.setLabel(getSafeValue("label", row));
-                option.setRequired(getSafeValue("required", row));
-                option.setType(getSafeValue("type", row));
-                option.setJavaType(getSafeValue("javaType", row));
-                option.setEnums(getSafeValue("enum", row));
-                option.setPrefix(getSafeValue("prefix", row));
-                option.setMultiValue(getSafeValue("multiValue", row));
-                option.setDeprecated(getSafeValue("deprecated", row));
-                option.setSecret(getSafeValue("secret", row));
-                option.setDefaultValue(getSafeValue("defaultValue", row));
-                option.setDescription(getSafeValue("description", row));
-                component.addEndpointOption(option);
-            }
+            return component;
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to parse component json structure");
         }
-
-        return component;
     }
 }

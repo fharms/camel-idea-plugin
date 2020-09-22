@@ -16,8 +16,8 @@
  */
 package com.github.cameltooling.idea.util;
 
-import java.util.List;
 import java.util.Map;
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -74,26 +74,32 @@ public final class StringUtils {
      * Gets the value with the key in a safe way, eg returning an empty string if there was no value for the key.
      */
     @NotNull
-    public static String getSafeValue(String key, List<Map<String, String>> rows) {
-        for (Map<String, String> row : rows) {
-            String value = row.get(key);
-            if (value != null) {
-                return value;
-            }
+    public static <T> T getSafeValue(String key, Map<String, Object> rows, Object defaultValue) {
+        Object value = rows.getOrDefault(key, defaultValue);
+        if (value instanceof String) {
+            return (T) (value != null ? value : "");
+        } else if (value instanceof Boolean) {
+            return (T) (value != null ?  value  : false);
+        } else {
+            return (T)value;
         }
-        return "";
     }
 
     /**
      * Gets the value with the key in a safe way, eg returning an empty string if there was no value for the key.
      */
     @NotNull
-    public static String getSafeValue(String key, Map<String, String> rows) {
-        String value = rows.get(key);
-        if (value != null) {
-            return value;
+    public static <T> T getSafeDefaultValue(String key, Map<String, Object> rows) {
+        Object value = rows.get(key);
+        if (value instanceof String) {
+            return (T) (value != null ? value : "");
+        } else if (value instanceof Boolean) {
+            //if the value is actually a type boolean means there is no default value
+            //and we always return "" not mater what the boolean value is
+            return (T) "";
+        } else {
+            return (T)value;
         }
-        return "";
     }
 
     /**

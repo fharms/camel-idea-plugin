@@ -7,6 +7,7 @@ import com.intellij.openapi.roots.ContentEntry;
 import com.intellij.openapi.roots.LanguageLevelModuleExtension;
 import com.intellij.openapi.roots.ModifiableRootModel;
 import com.intellij.pom.java.LanguageLevel;
+import com.intellij.testFramework.IdeaTestUtil;
 import com.intellij.testFramework.InspectionTestCase;
 import com.intellij.testFramework.LightProjectDescriptor;
 import com.intellij.testFramework.fixtures.DefaultLightProjectDescriptor;
@@ -31,8 +32,7 @@ public abstract class CamelInspectionTestHelper extends InspectionTestCase {
         return new DefaultLightProjectDescriptor() {
             @Override
             public Sdk getSdk() {
-                String compilerOption = JpsJavaSdkType.complianceOption(languageLevel.toJavaVersion());
-                return JavaSdk.getInstance().createJdk( "java " + compilerOption, BUILD_MOCK_JDK_DIRECTORY + compilerOption, false );
+                return IdeaTestUtil.getMockJdk18();
             }
 
             @Override

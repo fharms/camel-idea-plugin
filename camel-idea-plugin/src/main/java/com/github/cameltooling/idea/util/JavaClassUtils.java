@@ -65,7 +65,7 @@ public class JavaClassUtils implements Disposable {
         final String beanName = getBeanName(clazz, "org.springframework.stereotype.Component")
             .orElseGet(() -> getBeanName(clazz, "org.springframework.stereotype.Service")
                 .orElseGet(() -> getBeanName(clazz, "org.springframework.stereotype.Repository")
-                    .orElse(Introspector.decapitalize(clazz.getText()))));
+                    .orElse(Introspector.decapitalize(clazz.getName()))));
         return beanName;
     }
 

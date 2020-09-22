@@ -26,6 +26,7 @@ import com.github.cameltooling.idea.service.CamelPreferenceService;
 import com.github.cameltooling.idea.service.CamelService;
 import com.github.cameltooling.idea.util.CamelIdeaUtils;
 import com.github.cameltooling.idea.util.IdeaUtils;
+import com.intellij.codeInsight.daemon.LineMarkerInfo;
 import com.intellij.codeInsight.daemon.RelatedItemLineMarkerInfo;
 import com.intellij.codeInsight.daemon.RelatedItemLineMarkerProvider;
 import com.intellij.codeInsight.navigation.NavigationGutterIconBuilder;
@@ -69,8 +70,7 @@ public class CamelRouteLineMarkerProvider extends RelatedItemLineMarkerProvider 
     }
 
     @Override
-    protected void collectNavigationMarkers(@NotNull PsiElement element,
-                                            Collection<? super RelatedItemLineMarkerInfo> result) {
+    protected void collectNavigationMarkers(@NotNull PsiElement element, @NotNull Collection<? super RelatedItemLineMarkerInfo<?>> result) {
         //TODO: remove this when IdeaUtils.isFromJavaMethodCall will be fixed
         if (isJavaTokenLiteralExpression(element)
             || isXmlTokenLiteralExpression(element)

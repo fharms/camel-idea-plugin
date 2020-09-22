@@ -16,10 +16,7 @@
  */
 package com.github.cameltooling.idea.completion.extension;
 
-import java.util.List;
-import java.util.Map;
 import com.github.cameltooling.idea.model.ComponentModel;
-import com.github.cameltooling.idea.model.EndpointOptionModel;
 import com.github.cameltooling.idea.model.ModelHelper;
 import com.github.cameltooling.idea.service.CamelCatalogService;
 import com.github.cameltooling.idea.util.IdeaUtils;
@@ -33,7 +30,12 @@ import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiElement;
 import com.intellij.util.ProcessingContext;
 import org.apache.camel.catalog.CamelCatalog;
+import org.apache.camel.tooling.model.ComponentModel.EndpointOptionModel;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.List;
+import java.util.Map;
+
 import static com.github.cameltooling.idea.completion.endpoint.CamelSmartCompletionEndpointOptions.addSmartCompletionSuggestionsContextPath;
 import static com.github.cameltooling.idea.completion.endpoint.CamelSmartCompletionEndpointOptions.addSmartCompletionSuggestionsQueryParameters;
 import static com.github.cameltooling.idea.completion.endpoint.CamelSmartCompletionEndpointValue.addSmartCompletionForEndpointValue;
@@ -78,7 +80,7 @@ public class CamelEndpointSmartCompletionExtension implements CamelCompletionExt
         // grab all existing parameters
         String concatQuery = query[0];
         String suffix = query[1];
-        String queryAtPosition =  query[2];
+        String queryAtPosition = query[2];
         String prefixValue =  query[2];
         // camel catalog expects &amp; as & when it parses so replace all &amp; as &
         concatQuery = concatQuery.replaceAll("&amp;", "&");

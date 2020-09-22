@@ -156,8 +156,8 @@ public class CamelAddEndpointIntention extends PsiElementBaseIntentionAction imp
             String json = camelCatalog.componentJSonSchema(name);
             ComponentModel model = ModelHelper.generateComponentModel(json, false);
             if (artifactIds.contains(model.getArtifactId())) {
-                boolean onlyConsume = "true".equals(model.getConsumerOnly());
-                boolean onlyProduce = "true".equals(model.getProducerOnly());
+                boolean onlyConsume = "true".equals(model.isConsumerOnly());
+                boolean onlyProduce = "true".equals(model.isProducerOnly());
                 boolean both = !onlyConsume && !onlyProduce;
 
                 if (both) {

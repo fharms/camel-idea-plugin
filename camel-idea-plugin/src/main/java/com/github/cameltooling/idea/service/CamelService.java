@@ -16,30 +16,6 @@
  */
 package com.github.cameltooling.idea.service;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.jar.JarEntry;
-import java.util.jar.JarInputStream;
-import java.util.stream.Collectors;
-import javax.swing.*;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 import com.github.cameltooling.idea.util.IdeaUtils;
 import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationGroup;
@@ -56,9 +32,23 @@ import com.intellij.openapi.roots.libraries.Library;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.apache.camel.catalog.CamelCatalog;
 import org.jetbrains.annotations.NotNull;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
+import javax.swing.*;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.*;
+import java.util.*;
+import java.util.jar.JarEntry;
+import java.util.jar.JarInputStream;
+import java.util.stream.Collectors;
+
 import static com.github.cameltooling.idea.service.XmlUtils.getChildNodeByTagName;
 import static com.github.cameltooling.idea.service.XmlUtils.loadDocument;
-import static org.apache.camel.catalog.CatalogHelper.loadText;
 
 /**
  * Service access for Camel libraries
@@ -73,6 +63,7 @@ public class CamelService implements Disposable {
     private static final int MIN_MINOR_VERSION = 16;
 
     private Library camelCoreLibrary;
+    private Library camelCoreLangLibrary;
     private Library slf4japiLibrary;
     private ClassLoader camelCoreClassloader;
     private Set<String> processedLibraries = new HashSet<>();
@@ -107,6 +98,7 @@ public class CamelService implements Disposable {
 
         camelCoreClassloader = null;
         camelCoreLibrary = null;
+        camelCoreLangLibrary = null;
         slf4japiLibrary = null;
         projectClassloader = null;
     }
@@ -169,7 +161,7 @@ public class CamelService implements Disposable {
     public ClassLoader getCamelCoreClassloader() {
         if (camelCoreClassloader == null) {
             try {
-                camelCoreClassloader = getIdeaUtils().newURLClassLoaderForLibrary(camelCoreLibrary, slf4japiLibrary);
+                camelCoreClassloader = getIdeaUtils().newURLClassLoaderForLibrary(camelCoreLibrary, camelCoreLangLibrary, slf4japiLibrary);
             } catch (Throwable e) {
                 LOG.warn("Error creating URLClassLoader for loading classes from camel-core", e);
             }
@@ -246,28 +238,17 @@ public class CamelService implements Disposable {
 
             if (isSlf4jMavenDependency(groupId, artifactId)) {
                 slf4japiLibrary = library;
+            } else if (isCamelCoreLangMavenDependency(groupId, artifactId)) {
+                camelCoreLangLibrary = library;
             } else if (isCamelCoreMavenDependency(groupId, artifactId)) {
                 camelCoreLibrary = library;
 
                 // okay its a camel project
                 setCamelPresent(true);
 
-                String currentVersion = getCamelCatalogService(project).get().getLoadedVersion();
-                if (currentVersion == null) {
-                    // okay no special version was loaded so its the catalog version we are using
-                    currentVersion = getCamelCatalogService(project).get().getCatalogVersion();
-                }
+                String currentVersion = getCamelVersion(project);
                 if (isThereDifferentVersionToBeLoaded(version, currentVersion)) {
-                    boolean notifyNewCamelCatalogVersionLoaded = false;
-
-                    boolean downloadAllowed = getCamelPreferenceService().isDownloadCatalog();
-                    if (downloadAllowed) {
-                        notifyNewCamelCatalogVersionLoaded = downloadNewCamelCatalogVersion(project, module, version, notifyNewCamelCatalogVersionLoaded);
-                    }
-
-                    if (notifyNewCamelCatalogVersionLoaded(notifyNewCamelCatalogVersionLoaded)) {
-                        expireOldCamelCatalogVersion();
-                    }
+                    downloadNewCamelCatelogVersion(project, module, version);
                 }
 
                 // only notify this once on startup (or if a new version was successfully loaded)
@@ -283,6 +264,28 @@ public class CamelService implements Disposable {
         }
     }
 
+    private void downloadNewCamelCatelogVersion(@NotNull Project project, @NotNull Module module, String version) {
+        boolean notifyNewCamelCatalogVersionLoaded = false;
+
+        boolean downloadAllowed = getCamelPreferenceService().isDownloadCatalog();
+        if (downloadAllowed) {
+            notifyNewCamelCatalogVersionLoaded = downloadNewCamelCatalogVersion(project, module, version, notifyNewCamelCatalogVersionLoaded);
+        }
+
+        if (notifyNewCamelCatalogVersionLoaded(notifyNewCamelCatalogVersionLoaded)) {
+            expireOldCamelCatalogVersion();
+        }
+    }
+
+    private String getCamelVersion(@NotNull Project project) {
+        String currentVersion = getCamelCatalogService(project).get().getLoadedVersion();
+        if (currentVersion == null) {
+            // okay no special version was loaded so its the catalog version we are using
+            currentVersion = getCamelCatalogService(project).get().getCatalogVersion();
+        }
+        return currentVersion;
+    }
+
     private void showCamelCatalogVersionAtPluginStart(@NotNull Project project, String currentVersion) {
         camelVersionNotification = CAMEL_NOTIFICATION_GROUP.createNotification("Camel IDEA plugin is using camel-catalog version "
                 + currentVersion, NotificationType.INFORMATION);
@@ -295,6 +298,10 @@ public class CamelService implements Disposable {
 
     private boolean isCamelCoreMavenDependency(String groupId, String artifactId) {
         return "org.apache.camel".equals(groupId) && "camel-core".equals(artifactId);
+    }
+
+    private boolean isCamelCoreLangMavenDependency(String groupId, String artifactId) {
+        return "org.apache.camel".equals(groupId) && "camel-core-languages".equals(artifactId);
     }
 
     private void expireOldCamelCatalogVersion() {
@@ -457,7 +464,7 @@ public class CamelService implements Disposable {
                                 // find the class name
                                 String javaType = extractComponentJavaType(classLoader, scheme);
                                 if (javaType != null) {
-                                    String json = loadComponentJSonSchema(classLoader, scheme);
+                                    String json = getCamelCatalogService(null).get().componentJSonSchema(scheme);
                                     if (json != null) {
                                         // okay a new Camel component was added
                                         camelCatalog.addComponent(scheme, javaType, json);
@@ -608,7 +615,8 @@ public class CamelService implements Disposable {
         return entries;
     }
 
-    private static String loadComponentJSonSchema(URLClassLoader classLoader, String scheme) {
+    //TODO fharms remove because the camel catalog now support this
+    /*private static String loadComponentJSonSchema(URLClassLoader classLoader, String scheme) {
         String answer = null;
 
         String path = null;
@@ -632,7 +640,7 @@ public class CamelService implements Disposable {
         }
 
         return answer;
-    }
+    }*/
 
     private static String extractComponentJavaType(URLClassLoader classLoader, String scheme) {
         try {

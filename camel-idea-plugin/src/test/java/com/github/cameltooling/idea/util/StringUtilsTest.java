@@ -16,15 +16,12 @@
  */
 package com.github.cameltooling.idea.util;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import org.junit.Test;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.junit.Assert.*;
 
 public class StringUtilsTest {
 
@@ -57,22 +54,13 @@ public class StringUtilsTest {
 
     @Test
     public void getSafeValue() {
-        Map<String, String> row = new HashMap<>();
+        Map<String, Object> row = new HashMap<>();
         row.put("foo", "123");
 
-        assertEquals("123", StringUtils.getSafeValue("foo", row));
-        assertEquals("", StringUtils.getSafeValue("bar", row));
+        assertEquals("123", StringUtils.getSafeValue("foo", row, ""));
+        assertEquals("", StringUtils.getSafeValue("bar", row, ""));
 
-        Map<String, String> row2 = new HashMap<>();
-        row2.put("bar", "true");
 
-        List<Map<String, String>> rows = new ArrayList<>();
-        rows.add(row);
-        rows.add(row2);
-
-        assertEquals("123", StringUtils.getSafeValue("foo", rows));
-        assertEquals("true", StringUtils.getSafeValue("bar", rows));
-        assertEquals("", StringUtils.getSafeValue("baz", rows));
     }
 
     @Test

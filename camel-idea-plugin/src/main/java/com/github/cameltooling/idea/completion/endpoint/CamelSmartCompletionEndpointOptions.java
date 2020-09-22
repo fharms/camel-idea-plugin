@@ -17,7 +17,6 @@
 package com.github.cameltooling.idea.completion.endpoint;
 
 import com.github.cameltooling.idea.model.ComponentModel;
-import com.github.cameltooling.idea.model.EndpointOptionModel;
 import com.github.cameltooling.idea.service.CamelPreferenceService;
 import com.github.cameltooling.idea.util.CamelIdeaUtils;
 import com.github.cameltooling.idea.util.IdeaUtils;
@@ -37,6 +36,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Smart completion for editing a Camel endpoint uri, to show a list of possible endpoint options which can be added.
@@ -62,14 +62,14 @@ public final class CamelSmartCompletionEndpointOptions {
             queryAtPosition = queryAtPosition.replace("&amp;", "&");
         }
 
-        final List<EndpointOptionModel> options = component.getEndpointOptions();
+        final List<org.apache.camel.tooling.model.ComponentModel.EndpointOptionModel> options = component.getEndpointOptions();
         // sort the options A..Z which is easier to users to understand
         options.sort((o1, o2) -> o1
                 .getName()
                 .compareToIgnoreCase(o2.getName()));
         queryAtPosition = removeUnknownOption(queryAtPosition, existing, element);
 
-        for (final EndpointOptionModel option : options) {
+        for (final org.apache.camel.tooling.model.ComponentModel.EndpointOptionModel option : options) {
 
             if ("parameter".equals(option.getKind())) {
                 final String name = option.getName();
@@ -89,7 +89,7 @@ public final class CamelSmartCompletionEndpointOptions {
 
                 // only add if not already used (or if the option is multi valued then it can have many)
                 final String old = existing != null ? existing.get(name) : "";
-                if ("true".equals(option.getMultiValue()) || existing == null || old == null || old.isEmpty()) {
+                if (option.isMultiValue() || existing == null || old == null || old.isEmpty()) {
 
                     // no tail for prefix, otherwise use = to setup for value
                     final String key = option
@@ -126,16 +126,16 @@ public final class CamelSmartCompletionEndpointOptions {
                     if (!option.getJavaType().isEmpty()) {
                         builder = builder.withTypeText(option.getJavaType(), true);
                     }
-                    if ("true".equals(option.getDeprecated())) {
+                    if (option.isDeprecated()) {
                         // mark as deprecated
                         builder = builder.withStrikeoutness(true);
                     }
                     // add icons for various options
-                    if ("true".equals(option.getRequired())) {
+                    if (option.isRequired()) {
                         builder = builder.withIcon(AllIcons.Toolwindows.ToolWindowFavorites);
-                    } else if ("true".equals(option.getSecret())) {
+                    } else if (option.isSecret()) {
                         builder = builder.withIcon(AllIcons.Nodes.SecurityRole);
-                    } else if ("true".equals(option.getMultiValue())) {
+                    } else if (option.isMultiValue()) {
                         builder = builder.withIcon(AllIcons.General.ArrowRight);
                     } else if (!option.getEnums().isEmpty()) {
                         builder = builder.withIcon(AllIcons.Nodes.Enum);
@@ -194,7 +194,7 @@ public final class CamelSmartCompletionEndpointOptions {
                         .isEmpty())
                 .count();
         if (enums == 1) {
-            for (final EndpointOptionModel option : component.getEndpointOptions()) {
+            for (final org.apache.camel.tooling.model.ComponentModel.EndpointOptionModel option : component.getEndpointOptions()) {
 
                 // only add support for enum in the context-path smart completion
                 if ("path".equals(option.getKind()) && !option
@@ -206,9 +206,7 @@ public final class CamelSmartCompletionEndpointOptions {
                     if (existing == null || old == null || old.isEmpty()) {
 
                         // add all enum as choices
-                        for (final String choice : option
-                                .getEnums()
-                                .split(",")) {
+                        for (String choice : option.getEnums()) {
 
                             final String key = choice;
                             final String lookup = val + key;
@@ -220,7 +218,7 @@ public final class CamelSmartCompletionEndpointOptions {
                             builder = builder.withTypeText(name, true);
                             builder = builder.withIcon(AllIcons.Nodes.Enum);
 
-                            if ("true".equals(option.getDeprecated())) {
+                            if (option.isDeprecated()) {
                                 // mark as deprecated
                                 builder = builder.withStrikeoutness(true);
                             }

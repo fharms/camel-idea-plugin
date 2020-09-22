@@ -52,8 +52,10 @@ import com.intellij.psi.PsiManager;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiMethodCallExpression;
 import com.intellij.psi.PsiPolyadicExpression;
+import com.intellij.psi.PsiReference;
 import com.intellij.psi.PsiType;
 import com.intellij.psi.TokenType;
+import com.intellij.psi.impl.source.PsiClassReferenceType;
 import com.intellij.psi.impl.source.tree.JavaDocElementType;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.tree.IElementType;
@@ -78,7 +80,7 @@ public final class IdeaUtils implements Disposable {
 
     private static final List<String> ROUTE_BUILDER_OR_EXPRESSION_CLASS_QUALIFIED_NAME = Arrays.asList(
         "org.apache.camel.builder.RouteBuilder", "org.apache.camel.builder.BuilderSupport",
-        "org.apache.camel.model.ProcessorDefinition", "org.apache.camel.model.language.ExpressionDefinition");
+        "org.apache.camel.model.ProcessorDefinition", "org.apache.camel.Expression");
 
     private final List<IdeaUtilsExtension> enabledExtensions;
 
@@ -250,6 +252,29 @@ public final class IdeaUtils implements Disposable {
     }
 
     /**
+     * Is the given class or any of its super classes a class with the qualified name.
+     *
+     * @param target  the class
+     * @param fqnClassName the class name to match
+     * @return <tt>true</tt> if the class is a type or subtype of the class name
+     */
+    private static boolean isClassOrImplement(@Nullable PsiClass target, @NotNull String fqnClassName) {
+        if (target == null) {
+            return false;
+        }
+        if (target.getQualifiedName().equals(fqnClassName)) {
+            return true;
+        } else {
+            return Arrays.stream(target.getInterfaceTypes())
+                .map(psiClass -> ((PsiClassReferenceType)psiClass).getReference())
+                .map(PsiElement::getReference)
+                .map(PsiReference::resolve)
+                .anyMatch(psiElement -> isClassOrImplement((PsiClass)psiElement, fqnClassName));
+
+        }
+    }
+
+    /**
      * Is the element from a constructor call with the given constructor name (eg class name)
      *
      * @param element  the element
@@ -313,7 +338,9 @@ public final class IdeaUtils implements Disposable {
                 // TODO: this code should likely be moved to something that requires it from being a Camel RouteBuilder
                 if (Arrays.stream(methods).anyMatch(name::equals)) {
                     if (fromRouteBuilder) {
-                        return ROUTE_BUILDER_OR_EXPRESSION_CLASS_QUALIFIED_NAME.stream().anyMatch(t -> isClassOrParentOf(containingClass, t));
+                        return ROUTE_BUILDER_OR_EXPRESSION_CLASS_QUALIFIED_NAME
+                            .stream()
+                            .anyMatch(t -> isClassOrParentOf(containingClass, t) || isClassOrImplement(containingClass, t));
                     } else {
                         return true;
                     }

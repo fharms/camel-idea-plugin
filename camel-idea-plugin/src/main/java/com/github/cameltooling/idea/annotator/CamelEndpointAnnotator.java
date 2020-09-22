@@ -97,6 +97,7 @@ public class CamelEndpointAnnotator extends AbstractCamelAnnotator {
 
                 EndpointValidationResult result = catalogService.validateEndpointProperties(camelQuery, false, consumerOnly, producerOnly);
 
+                extractMapValue(result, result.getInvalidDuration(), uri, element, holder, new IntegerErrorMsg());
                 extractMapValue(result, result.getInvalidBoolean(), uri, element, holder, new BooleanErrorMsg());
                 extractMapValue(result, result.getInvalidEnum(), uri, element, holder, new EnumErrorMsg());
                 extractMapValue(result, result.getInvalidInteger(), uri, element, holder, new IntegerErrorMsg());

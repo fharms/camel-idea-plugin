@@ -49,35 +49,33 @@ public class CamelJSonPathAnnotatorTestIT extends CamelLightCodeInsightFixtureTe
     @Override
     protected void setUp() throws Exception {
         super.setUp();
-        File[] mavenArtifacts = getMavenArtifacts(CAMEL_JSONPATH_MAVEN_ARTIFACT);
-        for (File file : mavenArtifacts) {
-            final VirtualFile virtualFile = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(file);
-            final LibraryTable projectLibraryTable = LibraryTablesRegistrar.getInstance().getLibraryTable(getModule().getProject());
-            ApplicationManager.getApplication().runWriteAction(() -> {
-                String name = file.getName();
-                // special for camel JARs
-                if (name.contains("camel-core")) {
-                    name = "org.apache.camel:camel-core:2.22.0";
-                } else if (name.contains("camel-jsonpath")) {
-                    name = "org.apache.camel:camel-jsonpath:2.22.0";
-                } else {
-                    // need to fix the name
-                    if (name.endsWith(".jar")) {
-                        name = name.substring(0, name.length() - 4);
-                    }
-                    int lastDash = name.lastIndexOf('-');
-                    name = name.substring(0, lastDash) + ":" + name.substring(lastDash + 1);
-                    // add bogus groupid
-                    name = "com.foo:" + name;
+        File mavenArtifacts = getMavenArtifact(CAMEL_JSONPATH_MAVEN_ARTIFACT);
+        final VirtualFile virtualFile = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(mavenArtifacts);
+        final LibraryTable projectLibraryTable = LibraryTablesRegistrar.getInstance().getLibraryTable(getModule().getProject());
+        ApplicationManager.getApplication().runWriteAction(() -> {
+            String name = mavenArtifacts.getName();
+            // special for camel JARs
+            if (name.contains("camel-core")) {
+                name = "org.apache.camel:camel-core:2.22.0";
+            } else if (name.contains("camel-jsonpath")) {
+                name = "org.apache.camel:camel-jsonpath:2.22.0";
+            } else {
+                // need to fix the name
+                if (name.endsWith(".jar")) {
+                    name = name.substring(0, name.length() - 4);
                 }
+                int lastDash = name.lastIndexOf('-');
+                name = name.substring(0, lastDash) + ":" + name.substring(lastDash + 1);
+                // add bogus groupid
+                name = "com.foo:" + name;
+            }
 
-                Library library = projectLibraryTable.createLibrary("maven: " + name);
-                final Library.ModifiableModel libraryModifiableModel = library.getModifiableModel();
-                libraryModifiableModel.addRoot(virtualFile, OrderRootType.CLASSES);
-                libraryModifiableModel.commit();
-                ModuleRootModificationUtil.addDependency(getModule(), library);
+            Library library = projectLibraryTable.createLibrary("maven: " + name);
+            final Library.ModifiableModel libraryModifiableModel = library.getModifiableModel();
+            libraryModifiableModel.addRoot(virtualFile, OrderRootType.CLASSES);
+            libraryModifiableModel.commit();
+            ModuleRootModificationUtil.addDependency(getModule(), library);
             });
-        }
 
         disposeOnTearDown(ServiceManager.getService(getModule().getProject(), CamelCatalogService.class));
         disposeOnTearDown(ServiceManager.getService(getModule().getProject(), CamelService.class));

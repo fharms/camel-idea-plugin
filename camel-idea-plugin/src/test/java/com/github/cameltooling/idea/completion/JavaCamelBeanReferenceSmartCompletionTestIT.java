@@ -34,11 +34,11 @@ public class JavaCamelBeanReferenceSmartCompletionTestIT extends CamelLightCodeI
 
     private static final String SPRING_CONTEXT_MAVEN_ARTIFACT = "org.springframework:spring-context:5.1.6.RELEASE";
 
-    private static File[] springMavenArtifacts;
+    private static File springMavenArtifacts;
 
     static {
         try {
-            springMavenArtifacts = getMavenArtifacts(SPRING_CONTEXT_MAVEN_ARTIFACT);
+            springMavenArtifacts = getMavenArtifact(SPRING_CONTEXT_MAVEN_ARTIFACT);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -132,7 +132,7 @@ public class JavaCamelBeanReferenceSmartCompletionTestIT extends CamelLightCodeI
     @Override
     protected void setUp() throws Exception {
         super.setUp();
-        PsiTestUtil.addLibrary(myFixture.getProjectDisposable(), getModule(), "Maven: " + SPRING_CONTEXT_MAVEN_ARTIFACT, springMavenArtifacts[0].getParent(), springMavenArtifacts[0].getName());
+        PsiTestUtil.addLibrary(myFixture.getProjectDisposable(), getModule(), "Maven: " + SPRING_CONTEXT_MAVEN_ARTIFACT, springMavenArtifacts.getParent(), springMavenArtifacts.getName());
     }
 
     public void testJavaBeanTestDataCompletionWithIncorrectBeanRef() {

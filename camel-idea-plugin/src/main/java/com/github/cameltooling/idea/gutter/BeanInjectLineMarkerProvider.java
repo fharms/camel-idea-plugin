@@ -57,8 +57,7 @@ public class BeanInjectLineMarkerProvider extends RelatedItemLineMarkerProvider 
     static final String MARKER_TOOLTIP_TEXT = "Navigate to bean declaration";
 
     @Override
-    protected void collectNavigationMarkers(@NotNull PsiElement element,
-                                            @NotNull Collection<? super RelatedItemLineMarkerInfo> result) {
+    protected void collectNavigationMarkers(@NotNull PsiElement element, @NotNull Collection<? super RelatedItemLineMarkerInfo<?>> result) {
         PsiAnnotation beanInjectAnnotation = getBeanInjectAnnotation(element);
         if (beanInjectAnnotation != null) {
             Module module = ModuleUtilCore.findModuleForPsiElement(element);

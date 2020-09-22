@@ -90,11 +90,8 @@ public class JavaEndpointSmartCompletionValueTestIT extends CamelLightCodeInsigh
         assertThat(strings, Matchers.containsInAnyOrder(
             "timer:trigger?exchangePattern=InOut",
             "timer:trigger?exchangePattern=InOnly",
-            "timer:trigger?exchangePattern=InOptionalOut",
-            "timer:trigger?exchangePattern=OutIn",
-            "timer:trigger?exchangePattern=RobustInOnly",
-            "timer:trigger?exchangePattern=OutOptionalIn"));
-        assertEquals(6, strings.size());
+            "timer:trigger?exchangePattern=InOptionalOut"));
+        assertEquals(3, strings.size());
     }
 
 }

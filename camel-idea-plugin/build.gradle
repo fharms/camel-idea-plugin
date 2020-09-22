@@ -16,14 +16,14 @@
  */
 
 plugins {
-    id "org.jetbrains.intellij" version "0.4.18"
+    id "org.jetbrains.intellij" version "0.4.21"
 }
 
 apply plugin: 'java'
 apply plugin: 'org.jetbrains.intellij'
 
 intellij {
-    version = '2020.1'
+    version = '2020.2'
     downloadSources = true
     type = project.hasProperty('intellij_type') ? project.intellij_type : 'IC'
     plugins = ['java', 'java-i18n', 'properties', 'yaml']
@@ -37,8 +37,16 @@ publishPlugin {
 println "building with intellij type : ${intellij.type}"
 
 dependencies {
-    compile "org.apache.camel:camel-catalog:${camelVersion}"
+    compile ("org.apache.camel:camel-catalog:${camelVersion}") {
+        exclude group: 'org.slf4j', module: 'slf4j-api'
+    }
     compile "org.apache.camel:camel-catalog-maven:${camelVersion}"
+    compile "org.apache.camel:camel-util-json:${camelVersion}"
+    compile ("org.apache.camel:camel-util:${camelVersion}") {
+        exclude group: 'org.slf4j', module: 'slf4j-api'
+    }
+    compile "org.apache.camel:camel-tooling-util:${camelVersion}"
+    testCompile "org.apache.camel:camel-core-languages:${camelVersion}"
     testCompile "org.apache.camel:camel-core:${camelVersion}"
     testCompile 'org.jboss.shrinkwrap:shrinkwrap-depchain:1.2.6'
     testCompile 'org.jboss.shrinkwrap.resolver:shrinkwrap-resolver-depchain:3.1.4'
