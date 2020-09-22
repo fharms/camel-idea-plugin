@@ -19,7 +19,15 @@ package com.github.cameltooling.idea.inspection;
 import com.intellij.codeInspection.ex.LocalInspectionToolWrapper;
 import com.intellij.testFramework.InspectionTestCase;
 
-public class CamelInspectJavaEndpointTestIT extends InspectionTestCase {
+import static com.github.cameltooling.idea.CamelTestHelper.checkJavaSwingTimersAreDisposed;
+
+public class CamelInspectJavaEndpointTestIT extends CamelInspectionTestHelper {
+
+    @Override
+    protected void tearDown() throws Exception {
+        checkJavaSwingTimersAreDisposed();
+        super.tearDown();
+    }
 
     @Override
     protected String getTestDataPath() {

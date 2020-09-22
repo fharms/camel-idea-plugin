@@ -23,6 +23,8 @@ import org.jboss.shrinkwrap.resolver.api.maven.Maven;
 
 import java.io.File;
 
+import static com.github.cameltooling.idea.CamelTestHelper.checkJavaSwingTimersAreDisposed;
+
 
 public class CamelInspectJavaSimpleTestIT extends JavaInspectionTestCase {
     public static final String CAMEL_CORE_MAVEN_ARTIFACT = "org.apache.camel:camel-core:2.22.0";
@@ -32,6 +34,12 @@ public class CamelInspectJavaSimpleTestIT extends JavaInspectionTestCase {
         super.setUp();
         File[] mavenArtifacts =  Maven.resolver().resolve(CAMEL_CORE_MAVEN_ARTIFACT).withoutTransitivity().asFile();
         PsiTestUtil.addLibrary(myFixture.getProjectDisposable(), myFixture.getModule(), "Maven: " + CAMEL_CORE_MAVEN_ARTIFACT, mavenArtifacts[0].getParent(), mavenArtifacts[0].getName());
+    }
+
+    @Override
+    protected void tearDown() throws Exception {
+        checkJavaSwingTimersAreDisposed();
+        super.tearDown();
     }
 
     @Override

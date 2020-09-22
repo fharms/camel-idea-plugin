@@ -28,10 +28,18 @@ import com.intellij.psi.PsiIdentifier;
 import com.intellij.psi.PsiJavaToken;
 import com.github.cameltooling.idea.service.CamelPreferenceService;
 
+import static com.github.cameltooling.idea.CamelTestHelper.checkJavaSwingTimersAreDisposed;
+
 /**
  * Testing the Camel icon is shown in the gutter where a Camel route starts in Java DSL and the route navigation
  */
 public class JavaCamelRouteLineMarkerProviderTestIT extends CamelLightCodeInsightFixtureTestCaseIT {
+
+    @Override
+    protected void tearDown() throws Exception {
+        checkJavaSwingTimersAreDisposed();
+        super.tearDown();
+    }
 
     public void testCamelGutter() {
         myFixture.configureByFiles("JavaCamelRouteLineMarkerProviderTestData.java");

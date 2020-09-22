@@ -24,27 +24,17 @@ import com.github.cameltooling.idea.util.IdeaUtils;
 import com.github.cameltooling.idea.util.JavaMethodUtils;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ServiceManager;
-import com.intellij.openapi.module.Module;
-import com.intellij.openapi.projectRoots.Sdk;
-import com.intellij.openapi.roots.ContentEntry;
-import com.intellij.openapi.roots.LanguageLevelModuleExtension;
-import com.intellij.openapi.roots.ModifiableRootModel;
-import com.intellij.pom.java.LanguageLevel;
 import com.intellij.psi.PsiElement;
-import com.intellij.testFramework.IdeaTestUtil;
 import com.intellij.testFramework.LightProjectDescriptor;
 import com.intellij.testFramework.PsiTestUtil;
-import com.intellij.testFramework.fixtures.DefaultLightProjectDescriptor;
 import com.intellij.testFramework.fixtures.LightJavaCodeInsightFixtureTestCase;
 import org.jboss.shrinkwrap.resolver.api.maven.Maven;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Properties;
+import java.io.*;
+import java.util.*;
+
+import static com.github.cameltooling.idea.CamelTestHelper.checkJavaSwingTimersAreDisposed;
 
 /**
  * Super class for Camel Plugin Testing. If you are testing plug-in code with LightCodeInsightFixtureTestCase
@@ -103,6 +93,12 @@ public abstract class CamelLightCodeInsightFixtureTestCaseIT extends LightJavaCo
     }
 
     @Override
+    protected void tearDown() throws Exception {
+        checkJavaSwingTimersAreDisposed();
+        super.tearDown();
+    }
+
+    @Override
     protected String getTestDataPath() {
         return "src/test/resources/testData/";
     }
@@ -157,17 +153,6 @@ public abstract class CamelLightCodeInsightFixtureTestCaseIT extends LightJavaCo
     @NotNull
     @Override
     protected LightProjectDescriptor getProjectDescriptor() {
-        LanguageLevel languageLevel = LanguageLevel.JDK_1_8;
-        return new DefaultLightProjectDescriptor() {
-            @Override
-            public Sdk getSdk() {
-                return IdeaTestUtil.getMockJdk18();
-            }
-
-            @Override
-            public void configureModule(@NotNull Module module, @NotNull ModifiableRootModel model, @NotNull ContentEntry contentEntry) {
-                model.getModuleExtension( LanguageLevelModuleExtension.class ).setLanguageLevel( languageLevel );
-            }
-        };
+        return JAVA_8;
     }
 }

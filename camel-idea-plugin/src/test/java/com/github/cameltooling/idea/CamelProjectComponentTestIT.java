@@ -43,6 +43,8 @@ import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jetbrains.annotations.NotNull;
 
+import static com.github.cameltooling.idea.CamelTestHelper.checkJavaSwingTimersAreDisposed;
+
 /**
  * Test if the {@link CamelService} service is updated correctly when changes happen to
  * the Project and model configuration
@@ -61,6 +63,12 @@ public class CamelProjectComponentTestIT extends JavaModuleTestCase {
 
         super.setUp();
         root = new File(FileUtil.getTempDirectory());
+    }
+
+    @Override
+    protected void tearDown() throws Exception {
+        checkJavaSwingTimersAreDisposed();
+        super.tearDown();
     }
 
     @Override

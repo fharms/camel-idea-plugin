@@ -20,9 +20,11 @@ import com.github.cameltooling.idea.service.CamelService;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiLiteralExpression;
-import com.intellij.testFramework.fixtures.LightCodeInsightFixtureTestCase;
+import com.intellij.testFramework.fixtures.LightJavaCodeInsightFixtureTestCase;
 
-public class IdeaUtilsIsCamelRouteStartExtendedTestIT extends LightCodeInsightFixtureTestCase {
+import static com.github.cameltooling.idea.CamelTestHelper.checkJavaSwingTimersAreDisposed;
+
+public class IdeaUtilsIsCamelRouteStartExtendedTestIT extends LightJavaCodeInsightFixtureTestCase {
 
     private static final String CODE = "import org.apache.camel.builder.RouteBuilder;\n"
         + "\n"
@@ -45,6 +47,12 @@ public class IdeaUtilsIsCamelRouteStartExtendedTestIT extends LightCodeInsightFi
     protected void setUp() throws Exception {
         super.setUp();
         ServiceManager.getService(myFixture.getProject(), CamelService.class).setCamelPresent(true);
+    }
+
+    @Override
+    protected void tearDown() throws Exception {
+        checkJavaSwingTimersAreDisposed();
+        super.tearDown();
     }
 
     @Override
